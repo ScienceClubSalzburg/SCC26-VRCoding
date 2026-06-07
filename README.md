@@ -114,3 +114,134 @@ Erst danach werden:
 - zusätzliche Effekte
 
 eingebaut.
+
+---
+
+## Finale MVP-Entscheidung: Station "Birthday Party"
+
+### Ziel der Station
+
+Die Spieler:innen entschluesseln den Namen des Geburtstagskindes und geben ihn auf der Geburtstagskarte ein.
+
+Wenn der Name richtig ist, oeffnet sich die Tuer zur naechsten Station.
+
+### Finale Loesung
+
+Der gesuchte Name ist:
+
+**EMILIA**
+
+### Spielprinzip
+
+Eine Person spielt in VR. Eine zweite Person ist ausserhalb von VR und hat eine reale Caesar-/Emoji-Scheibe.
+
+Die VR-Person sieht Symbole im Raum und beschreibt sie. Die reale Person uebersetzt die Symbole mit der Scheibe in Buchstaben. Gemeinsam finden sie den Namen.
+
+### Code-Logik
+
+Die Symbole auf der Girlande stehen fuer Buchstaben. Die Zahlen ueber den Symbolen geben die Reihenfolge im Namen an.
+
+| Zahl | Buchstabe | Symbol im MVP |
+|---:|---|---|
+| 1 | E | Kuchen |
+| 2 | M | Ballon |
+| 3 | I | Stern |
+| 4 | L | Geschenk |
+| 5 | I | Stern |
+| 6 | A | Smile |
+
+Am Eingang liegt ein Teppich-Hinweis:
+
+**A = Smile**
+
+### Eingabe
+
+Auf oder unter der Geburtstagskarte befindet sich ein Eingabefeld.
+
+Die Spieler:innen geben den Namen ein und druecken einen Button.
+
+MVP-Entscheidung:
+
+**World-Space-Canvas mit TMP_InputField und Submit-Button**
+
+Keine echte VR-Tastatur im MVP.
+
+### Erfolg
+
+Wenn die Eingabe richtig ist:
+
+- Konfetti startet.
+- Die Tuer oeffnet sich.
+- Es erscheint ein Erfolgstext.
+
+Erfolgstext:
+
+**"Richtig! Die Tuer oeffnet sich."**
+
+### Fehler
+
+Wenn die Eingabe falsch ist:
+
+- Die Eingabe wird geloescht.
+- Die Tuer bleibt geschlossen.
+- Es erscheint ein Hinweistext.
+
+Fehlertext:
+
+**"Falscher Name - probiere es nochmal."**
+
+MVP-Entscheidung:
+
+**Kein kompletter Level-Reset.**
+
+### Raumobjekte im MVP
+
+Diese Objekte muessen vorhanden sein:
+
+- VR-Basisraum mit Waypoint-Area
+- Tisch in der Mitte
+- Geburtstagskarte auf dem Tisch
+- Eingabefeld bei der Karte
+- Party-Girlande mit 6 nummerierten Symbolen
+- Teppich-Hinweis am Eingang
+- Tuer zur naechsten Station
+- Konfetti-Effekt
+
+Diese Objekte sind optional:
+
+- Buecherregal
+- Kuchen
+- Geschenke
+- Ballons
+- Katze
+- Kratzbaum
+- Futterschuessel
+- Couch
+
+### Nicht Teil des MVP
+
+Nicht Teil der ersten Version:
+
+- perfekte Party-Dekoration
+- finale 3D-Assets
+- echte VR-Tastatur
+- komplette Level-Reset-Logik
+- komplexe Animationen
+- Sounddesign
+- detaillierte Beleuchtung
+- Quest-Optimierung im ersten Schritt
+
+### Akzeptanzkriterien
+
+Das MVP gilt als fertig, wenn:
+
+- der Raum in VR begehbar ist
+- die Girlande sichtbar ist
+- die Zahlen ueber den Symbolen lesbar sind
+- der Teppich-Hinweis sichtbar ist
+- der Name eingegeben werden kann
+- falsche Eingabe abgelehnt wird
+- richtige Eingabe erkannt wird
+- Konfetti startet
+- die Tuer sich oeffnet
+- keine Compile Errors vorhanden sind
