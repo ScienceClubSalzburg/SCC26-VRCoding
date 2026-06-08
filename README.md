@@ -87,6 +87,16 @@ Das bedeutet:
 
 ---
 
+## Snap Turn
+
+Snap Turn wurde geprüft. Im aktuellen XR-Setup ist kein eigener Snap Turn Provider sichtbar.
+
+Die Bewegung erfolgt über Waypoints/Teleportation.
+
+Falls sich beim Testen eine Controller-Drehung zeigt, wird die Turn-Action im Input Action Asset deaktiviert.
+
+---
+
 ## Ziel des Basisraums
 
 Der Basisraum soll später als Vorlage für mehrere Rätselräume verwendet werden.
