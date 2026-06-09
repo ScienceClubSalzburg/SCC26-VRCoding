@@ -3,9 +3,11 @@
 ## Projektübersicht
 
 Dieses Unity-Projekt ist die technische Grundlage für ein modulares VR-Labyrinth.  
-Die einzelnen Räume sollen später als kurze VR-Minispiele bzw. Rätselräume umgesetzt werden.
+Die einzelnen Räume werden als kurze VR-Minispiele bzw. Rätselräume umgesetzt.
 
-Alle Räume basieren auf einem gemeinsamen VR-Basisraum. Dadurch sollen Aufbau, Bewegung und Interaktion in allen Räumen einheitlich funktionieren.
+Das MVP besteht aus einer Main-Szene und vier Mini-Räumen mit Puzzles. Die Mini-Räume werden additiv als eigene Szenen geladen.
+
+Alle Mini-Räume basieren auf einem gemeinsamen VR-Basisraum. Dadurch sollen Aufbau, Bewegung und Interaktion in allen Räumen einheitlich funktionieren.
 
 ---
 
@@ -60,6 +62,30 @@ In dieser Szene sollen zunächst nur die wichtigsten Grundelemente vorhanden sei
 - Platz für spätere Rätselobjekte
 
 Die Szene ist noch kein fertiges Spiel, sondern eine technische Grundlage für alle weiteren Räume.
+
+---
+
+## Szenenstruktur und additives Laden
+
+Die technische Einstiegsszene ist:
+
+**Main.unity**
+
+Die Main-Szene enthält die zentralen XR-Grundobjekte wie XR Origin / VR Player, EventSystem und SceneLoader.
+
+Die vier Mini-Räume mit Puzzles werden nicht direkt in Main eingebaut, sondern additiv als eigene Unity-Szenen geladen.
+
+Aktuell additiv geladen:
+
+- **BirthdayParty.unity**
+
+Geplante Struktur:
+
+- **Main.unity** bleibt als dauerhafte Basis geladen.
+- Jeder Mini-Raum ist eine eigene additive Szene.
+- Puzzle-Logik, Raumobjekte und stationsspezifische Assets liegen in der jeweiligen Mini-Raum-Szene.
+- Gemeinsame XR-Objekte werden nicht in jeder Mini-Raum-Szene dupliziert.
+- Neue Mini-Räume werden im `SceneLoaderScript` und in den Unity Build Settings ergänzt.
 
 ---
 
