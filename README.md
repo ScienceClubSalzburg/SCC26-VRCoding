@@ -147,6 +147,29 @@ Eine Person spielt in VR. Eine zweite Person ist ausserhalb von VR und hat eine 
 
 Die VR-Person sieht Symbole im Raum und beschreibt sie. Die reale Person uebersetzt die Symbole mit der Scheibe in Buchstaben. Gemeinsam finden sie den Namen.
 
+### Storylogik
+
+Am Boden liegt eine Einladung mit dem Hinweis:
+
+**"Du bist eingeladen, aber der Name fehlt. Du brauchst Hilfe."**
+
+Auf dem Tisch liegt eine unfertige Geburtstagskarte mit dem Hinweis:
+
+**"Ich bin unfertig. Bring mich zum Drucker."**
+
+Der Drucker erklaert die Aufgabe:
+
+**"Ich brauche den Namen. Der Name ist mit Emojis verschluesselt. Nutzt die Caesar-Scheibe."**
+
+Das Finale findet am Drucker statt.
+
+Wenn der richtige Name eingegeben wurde:
+
+- **"Name erkannt ..."**
+- **"Karte wird magisch gedruckt ..."**
+
+Was genau auf den Einladungskarten steht, wird noch bekannt gegeben.
+
 ### Code-Logik
 
 Die Symbole auf der Girlande stehen fuer Buchstaben. Die Zahlen ueber den Symbolen geben die Reihenfolge im Namen an.
@@ -166,7 +189,7 @@ Am Eingang liegt ein Teppich-Hinweis:
 
 ### Eingabe
 
-Auf oder unter der Geburtstagskarte befindet sich ein Eingabefeld.
+Am Drucker befindet sich ein Eingabefeld.
 
 Die Spieler:innen geben den Namen ein und druecken einen Button.
 
@@ -180,6 +203,8 @@ Keine echte VR-Tastatur im MVP.
 
 Wenn die Eingabe richtig ist:
 
+- Der Drucker erkennt den Namen.
+- Die Karte wird magisch gedruckt.
 - Konfetti startet.
 - Die Tuer oeffnet sich.
 - Es erscheint ein Erfolgstext.
@@ -209,9 +234,11 @@ MVP-Entscheidung:
 Diese Objekte muessen vorhanden sein:
 
 - VR-Basisraum mit Waypoint-Area
+- Einladung am Boden
 - Tisch in der Mitte
 - Geburtstagskarte auf dem Tisch
-- Eingabefeld bei der Karte
+- Drucker
+- Eingabefeld am Drucker
 - Party-Girlande mit 6 nummerierten Symbolen
 - Teppich-Hinweis am Eingang
 - Tuer zur naechsten Station
@@ -248,6 +275,9 @@ Das MVP gilt als fertig, wenn:
 - der Raum in VR begehbar ist
 - die Girlande sichtbar ist
 - die Zahlen ueber den Symbolen lesbar sind
+- die Einladung am Boden sichtbar ist
+- die Karte auf dem Tisch sichtbar ist
+- der Drucker sichtbar ist
 - der Teppich-Hinweis sichtbar ist
 - der Name eingegeben werden kann
 - falsche Eingabe abgelehnt wird
