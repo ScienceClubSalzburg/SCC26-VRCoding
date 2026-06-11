@@ -4288,6 +4288,7 @@ MonoBehaviour:
   printerHead: {fileID: 2076228848}
   feedbackText: {fileID: 1315704852}
   printedCardVisual: {fileID: 0}
+  confettiEffect: {fileID: 0}
   sensorHalfExtents: {x: 0.35, y: 0.12, z: 0.35}
   cardNameContains: Card
   cardLayerMask:
@@ -4300,6 +4301,7 @@ MonoBehaviour:
   readyMessage: "Dr\xFCcke den gr\xFCnen Knopf um zu starten."
   printingMessage: Karte wird gedruckt...
   doneMessage: Karte ist gedruckt!
+  confettiEffectName: ConfettiParticleEffect
 --- !u!1 &1245826677
 GameObject:
   m_ObjectHideFlags: 0
@@ -5480,6 +5482,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 740932474}
     m_Modifications:
+    - target: {fileID: 2917482153430166093, guid: b69f4473cbef7f04e8b29bfdb5131724, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917482153430166093, guid: b69f4473cbef7f04e8b29bfdb5131724, type: 3}
+      propertyPath: stopAction
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2917482153430166093, guid: b69f4473cbef7f04e8b29bfdb5131724, type: 3}
       propertyPath: EmissionModule.m_BurstCount
       value: 3

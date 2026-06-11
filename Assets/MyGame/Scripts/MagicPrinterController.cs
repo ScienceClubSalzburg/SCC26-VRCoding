@@ -9,6 +9,7 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private Transform printerHead;
     [SerializeField] private TMP_Text feedbackText;
     [SerializeField] private GameObject printedCardVisual;
+    [SerializeField] private ParticleSystem confettiEffect;
 
     [Header("Detection")]
     [SerializeField] private Vector3 sensorHalfExtents = new Vector3(0.35f, 0.12f, 0.35f);
@@ -23,6 +24,7 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private string readyMessage = "Drücke den grünen Knopf um zu starten.";
     [SerializeField] private string printingMessage = "Karte wird gedruckt...";
     [SerializeField] private string doneMessage = "Karte ist gedruckt!";
+    [SerializeField] private string confettiEffectName = "ConfettiParticleEffect";
 
     private Vector3 headStartLocalPosition;
     private bool cardDetected;
@@ -42,10 +44,16 @@ public class MagicPrinterController : MonoBehaviour
         {
             printedCardVisual.SetActive(false);
         }
+
+        if (confettiEffect != null)
+        {
+            confettiEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
     }
 
     private void Start()
     {
+        ResolveConfettiEffect();
         UpdateFeedback();
     }
 
@@ -109,7 +117,24 @@ public class MagicPrinterController : MonoBehaviour
             printedCardVisual.SetActive(true);
         }
 
+        PlayConfettiOnce();
         SetFeedback(doneMessage);
+    }
+
+    private void PlayConfettiOnce()
+    {
+        ResolveConfettiEffect();
+
+        if (confettiEffect == null)
+        {
+            Debug.LogWarning($"Could not find ParticleSystem '{confettiEffectName}' for MagicPrinter confetti.", this);
+            return;
+        }
+
+        confettiEffect.gameObject.SetActive(true);
+        confettiEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        confettiEffect.Clear(true);
+        confettiEffect.Play(true);
     }
 
     private IEnumerator MoveHead(Vector3 from, Vector3 to, float duration)
@@ -210,6 +235,8 @@ public class MagicPrinterController : MonoBehaviour
                 feedbackText = feedbackTransform.GetComponent<TMP_Text>();
             }
         }
+
+        ResolveConfettiEffect();
     }
 
     private static Transform FindChildByName(Transform root, string childName)
@@ -219,6 +246,33 @@ public class MagicPrinterController : MonoBehaviour
             if (child.name == childName)
             {
                 return child;
+            }
+        }
+
+        return null;
+    }
+
+    private void ResolveConfettiEffect()
+    {
+        if (confettiEffect == null)
+        {
+            confettiEffect = FindParticleSystemByName(confettiEffectName);
+        }
+    }
+
+    private static ParticleSystem FindParticleSystemByName(string effectName)
+    {
+        if (string.IsNullOrEmpty(effectName))
+        {
+            return null;
+        }
+
+        ParticleSystem[] particleSystems = FindObjectsByType<ParticleSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (ParticleSystem particleSystem in particleSystems)
+        {
+            if (particleSystem.name == effectName || particleSystem.transform.root.name == effectName)
+            {
+                return particleSystem;
             }
         }
 
