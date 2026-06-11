@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -8,6 +9,7 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private Transform cardSensor;
     [SerializeField] private Transform printerHead;
     [SerializeField] private TMP_Text feedbackText;
+    [SerializeField] private TMP_InputField nameInputField;
     [SerializeField] private GameObject printedCardVisual;
     [SerializeField] private ParticleSystem confettiEffect;
 
@@ -24,7 +26,13 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private string readyMessage = "Drücke den grünen Knopf um zu starten.";
     [SerializeField] private string printingMessage = "Karte wird gedruckt...";
     [SerializeField] private string doneMessage = "Karte ist gedruckt!";
+    [SerializeField] private string wrongNameMessage = "Falscher Name!";
     [SerializeField] private string confettiEffectName = "ConfettiParticleEffect";
+
+    [Header("Name Puzzle")]
+    [SerializeField] private bool requireCorrectName = true;
+    [SerializeField] private string requiredName = "amelie";
+    [SerializeField] private string keyboardRootName = "Keyboard";
 
     private Vector3 headStartLocalPosition;
     private bool cardDetected;
@@ -96,7 +104,38 @@ public class MagicPrinterController : MonoBehaviour
             return;
         }
 
+        if (requireCorrectName && !IsEnteredNameCorrect())
+        {
+            SetFeedback(wrongNameMessage);
+            return;
+        }
+
         StartCoroutine(PrintRoutine());
+    }
+
+    private bool IsEnteredNameCorrect()
+    {
+        ResolveNameInputField();
+
+        if (nameInputField == null)
+        {
+            Debug.LogWarning("MagicPrinter could not find a TMP_InputField for the birthday name check.", this);
+            return false;
+        }
+
+        string enteredName = NormalizeName(nameInputField.text);
+        string expectedName = NormalizeName(requiredName);
+        return string.Equals(enteredName, expectedName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return value.Trim().Replace(" ", string.Empty);
     }
 
     private IEnumerator PrintRoutine()
@@ -236,6 +275,7 @@ public class MagicPrinterController : MonoBehaviour
             }
         }
 
+        ResolveNameInputField();
         ResolveConfettiEffect();
     }
 
@@ -258,6 +298,50 @@ public class MagicPrinterController : MonoBehaviour
         {
             confettiEffect = FindParticleSystemByName(confettiEffectName);
         }
+    }
+
+    private void ResolveNameInputField()
+    {
+        if (nameInputField != null)
+        {
+            return;
+        }
+
+        TMP_InputField[] inputFields = FindObjectsByType<TMP_InputField>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (TMP_InputField inputField in inputFields)
+        {
+            if (inputField != null && IsUnderNamedParent(inputField.transform, keyboardRootName))
+            {
+                nameInputField = inputField;
+                return;
+            }
+        }
+
+        if (inputFields.Length > 0)
+        {
+            nameInputField = inputFields[0];
+        }
+    }
+
+    private static bool IsUnderNamedParent(Transform candidate, string parentName)
+    {
+        if (candidate == null || string.IsNullOrEmpty(parentName))
+        {
+            return false;
+        }
+
+        Transform current = candidate;
+        while (current != null)
+        {
+            if (current.name == parentName)
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
     }
 
     private static ParticleSystem FindParticleSystemByName(string effectName)
