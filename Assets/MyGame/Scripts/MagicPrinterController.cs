@@ -34,10 +34,18 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private string requiredName = "amelie";
     [SerializeField] private string keyboardRootName = "Keyboard";
 
+    [Header("Exit Door")]
+    [SerializeField] private Transform exitDoor;
+    [SerializeField] private string exitDoorName = "ExitDoor";
+    [SerializeField] private string exitDoorWingName = "doorWing";
+    [SerializeField] private Vector3 exitDoorOpenEulerOffset = new Vector3(0f, -90f, 0f);
+    [SerializeField] private float exitDoorOpenDuration = 1f;
+
     private Vector3 headStartLocalPosition;
     private bool cardDetected;
     private bool isPrinting;
     private bool printed;
+    private bool exitDoorOpened;
 
     private void Awake()
     {
@@ -74,10 +82,6 @@ public class MagicPrinterController : MonoBehaviour
             UpdateFeedback();
         }
 
-        if (Application.isEditor && Input.GetKeyDown(KeyCode.E))
-        {
-            PressGreenButton();
-        }
     }
 
     public void RegisterCard()
@@ -157,7 +161,50 @@ public class MagicPrinterController : MonoBehaviour
         }
 
         PlayConfettiOnce();
+        OpenExitDoor();
         SetFeedback(doneMessage);
+    }
+
+    private void OpenExitDoor()
+    {
+        if (exitDoorOpened)
+        {
+            return;
+        }
+
+        ResolveExitDoor();
+
+        if (exitDoor == null)
+        {
+            Debug.LogWarning($"MagicPrinter could not find exit door '{exitDoorName}'.", this);
+            return;
+        }
+
+        exitDoorOpened = true;
+        StartCoroutine(OpenExitDoorRoutine());
+    }
+
+    private IEnumerator OpenExitDoorRoutine()
+    {
+        Quaternion closedRotation = exitDoor.localRotation;
+        Quaternion openRotation = closedRotation * Quaternion.Euler(exitDoorOpenEulerOffset);
+
+        if (exitDoorOpenDuration <= 0f)
+        {
+            exitDoor.localRotation = openRotation;
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < exitDoorOpenDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / exitDoorOpenDuration);
+            exitDoor.localRotation = Quaternion.Slerp(closedRotation, openRotation, Mathf.SmoothStep(0f, 1f, t));
+            yield return null;
+        }
+
+        exitDoor.localRotation = openRotation;
     }
 
     private void PlayConfettiOnce()
@@ -276,6 +323,7 @@ public class MagicPrinterController : MonoBehaviour
         }
 
         ResolveNameInputField();
+        ResolveExitDoor();
         ResolveConfettiEffect();
     }
 
@@ -323,6 +371,24 @@ public class MagicPrinterController : MonoBehaviour
         }
     }
 
+    private void ResolveExitDoor()
+    {
+        if (exitDoor != null)
+        {
+            return;
+        }
+
+        Transform exitDoorRoot = FindSceneTransformByName(exitDoorName);
+        if (exitDoorRoot != null)
+        {
+            Transform doorWing = FindChildByName(exitDoorRoot, exitDoorWingName);
+            exitDoor = doorWing != null ? doorWing : exitDoorRoot;
+            return;
+        }
+
+        exitDoor = FindSceneTransformByName("Door_HouseA_Blue");
+    }
+
     private static bool IsUnderNamedParent(Transform candidate, string parentName)
     {
         if (candidate == null || string.IsNullOrEmpty(parentName))
@@ -342,6 +408,25 @@ public class MagicPrinterController : MonoBehaviour
         }
 
         return false;
+    }
+
+    private static Transform FindSceneTransformByName(string objectName)
+    {
+        if (string.IsNullOrEmpty(objectName))
+        {
+            return null;
+        }
+
+        Transform[] transforms = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (Transform sceneTransform in transforms)
+        {
+            if (sceneTransform.name == objectName)
+            {
+                return sceneTransform;
+            }
+        }
+
+        return null;
     }
 
     private static ParticleSystem FindParticleSystemByName(string effectName)
