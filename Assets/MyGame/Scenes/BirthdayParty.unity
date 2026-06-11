@@ -7888,7 +7888,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8024056710534070083, guid: 4637b1f7871e24a43a78461a83658d3f, type: 3}
       propertyPath: m_Name
-      value: C3_LostNameCard_interactable (1)
+      value: C4_LostNameCard_interactable (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8024056710534070083, guid: 4637b1f7871e24a43a78461a83658d3f, type: 3}
+      propertyPath: m_TagString
+      value: BPartyCard
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
