@@ -1,5 +1,7 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 public class MagicPrinterButton : MonoBehaviour
 {
@@ -12,6 +14,7 @@ public class MagicPrinterButton : MonoBehaviour
 
     private Vector3 startLocalPosition;
     private Coroutine animationRoutine;
+    private XRSimpleInteractable interactable;
 
     private void Awake()
     {
@@ -26,6 +29,28 @@ public class MagicPrinterButton : MonoBehaviour
         }
 
         startLocalPosition = buttonVisual.localPosition;
+
+        interactable = GetComponent<XRSimpleInteractable>();
+        if (interactable == null)
+        {
+            interactable = gameObject.AddComponent<XRSimpleInteractable>();
+        }
+    }
+
+    private void OnEnable()
+    {
+        if (interactable != null)
+        {
+            interactable.selectEntered.AddListener(OnSelectEntered);
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (interactable != null)
+        {
+            interactable.selectEntered.RemoveListener(OnSelectEntered);
+        }
     }
 
     private void OnMouseDown()
@@ -57,6 +82,11 @@ public class MagicPrinterButton : MonoBehaviour
         {
             printer.PressGreenButton();
         }
+    }
+
+    private void OnSelectEntered(SelectEnterEventArgs args)
+    {
+        Press();
     }
 
     private void PlayPressAnimation()
