@@ -11,6 +11,11 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private TMP_Text feedbackText;
     [SerializeField] private TMP_InputField nameInputField;
     [SerializeField] private GameObject printedCardVisual;
+    [SerializeField] private Sprite printedCardSprite;
+    [SerializeField] private string printedCardVisualName = "PrintedBirthdayCard";
+    [SerializeField] private Vector3 printedCardLocalPosition = new Vector3(0.12f, 0.08f, 0f);
+    [SerializeField] private Vector3 printedCardLocalRotation = new Vector3(90f, 0f, 0f);
+    [SerializeField] private Vector3 printedCardLocalScale = new Vector3(0.02f, 0.02f, 0.02f);
     [SerializeField] private ParticleSystem confettiEffect;
 
     [Header("Detection")]
@@ -58,6 +63,7 @@ public class MagicPrinterController : MonoBehaviour
 
         if (printedCardVisual != null)
         {
+            ApplyPrintedCardSprite();
             printedCardVisual.SetActive(false);
         }
 
@@ -157,6 +163,7 @@ public class MagicPrinterController : MonoBehaviour
 
         if (printedCardVisual != null)
         {
+            ApplyPrintedCardSprite();
             printedCardVisual.SetActive(true);
         }
 
@@ -325,6 +332,7 @@ public class MagicPrinterController : MonoBehaviour
         ResolveNameInputField();
         ResolveExitDoor();
         ResolveConfettiEffect();
+        ResolvePrintedCardVisual();
     }
 
     private static Transform FindChildByName(Transform root, string childName)
@@ -345,6 +353,53 @@ public class MagicPrinterController : MonoBehaviour
         if (confettiEffect == null)
         {
             confettiEffect = FindParticleSystemByName(confettiEffectName);
+        }
+    }
+
+    private void ResolvePrintedCardVisual()
+    {
+        if (printedCardVisual != null)
+        {
+            ApplyPrintedCardSprite();
+            return;
+        }
+
+        Transform existingVisual = FindChildByName(transform, printedCardVisualName);
+        if (existingVisual != null)
+        {
+            printedCardVisual = existingVisual.gameObject;
+            ApplyPrintedCardSprite();
+            return;
+        }
+
+        if (printedCardSprite == null)
+        {
+            return;
+        }
+
+        GameObject visual = new GameObject(printedCardVisualName);
+        visual.transform.SetParent(transform, false);
+        visual.transform.localPosition = printedCardLocalPosition;
+        visual.transform.localEulerAngles = printedCardLocalRotation;
+        visual.transform.localScale = printedCardLocalScale;
+
+        SpriteRenderer spriteRenderer = visual.AddComponent<SpriteRenderer>();
+        spriteRenderer.sprite = printedCardSprite;
+        spriteRenderer.sortingOrder = 10;
+
+        printedCardVisual = visual;
+    }
+
+    private void ApplyPrintedCardSprite()
+    {
+        if (printedCardSprite == null || printedCardVisual == null)
+        {
+            return;
+        }
+
+        if (printedCardVisual.TryGetComponent(out SpriteRenderer spriteRenderer))
+        {
+            spriteRenderer.sprite = printedCardSprite;
         }
     }
 
