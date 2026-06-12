@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -8,6 +9,7 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private Transform cardSensor;
     [SerializeField] private Transform printerHead;
     [SerializeField] private TMP_Text feedbackText;
+    [SerializeField] private TMP_InputField nameInputField;
     [SerializeField] private GameObject printedCardVisual;
     [SerializeField] private ParticleSystem confettiEffect;
 
@@ -24,12 +26,26 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private string readyMessage = "Drücke den grünen Knopf um zu starten.";
     [SerializeField] private string printingMessage = "Karte wird gedruckt...";
     [SerializeField] private string doneMessage = "Karte ist gedruckt!";
+    [SerializeField] private string wrongNameMessage = "Falscher Name!";
     [SerializeField] private string confettiEffectName = "ConfettiParticleEffect";
+
+    [Header("Name Puzzle")]
+    [SerializeField] private bool requireCorrectName = true;
+    [SerializeField] private string requiredName = "amelie";
+    [SerializeField] private string keyboardRootName = "Keyboard";
+
+    [Header("Exit Door")]
+    [SerializeField] private Transform exitDoor;
+    [SerializeField] private string exitDoorName = "ExitDoor";
+    [SerializeField] private string exitDoorWingName = "doorWing";
+    [SerializeField] private Vector3 exitDoorOpenEulerOffset = new Vector3(0f, -90f, 0f);
+    [SerializeField] private float exitDoorOpenDuration = 1f;
 
     private Vector3 headStartLocalPosition;
     private bool cardDetected;
     private bool isPrinting;
     private bool printed;
+    private bool exitDoorOpened;
 
     private void Awake()
     {
@@ -66,10 +82,6 @@ public class MagicPrinterController : MonoBehaviour
             UpdateFeedback();
         }
 
-        if (Application.isEditor && Input.GetKeyDown(KeyCode.E))
-        {
-            PressGreenButton();
-        }
     }
 
     public void RegisterCard()
@@ -96,7 +108,38 @@ public class MagicPrinterController : MonoBehaviour
             return;
         }
 
+        if (requireCorrectName && !IsEnteredNameCorrect())
+        {
+            SetFeedback(wrongNameMessage);
+            return;
+        }
+
         StartCoroutine(PrintRoutine());
+    }
+
+    private bool IsEnteredNameCorrect()
+    {
+        ResolveNameInputField();
+
+        if (nameInputField == null)
+        {
+            Debug.LogWarning("MagicPrinter could not find a TMP_InputField for the birthday name check.", this);
+            return false;
+        }
+
+        string enteredName = NormalizeName(nameInputField.text);
+        string expectedName = NormalizeName(requiredName);
+        return string.Equals(enteredName, expectedName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return value.Trim().Replace(" ", string.Empty);
     }
 
     private IEnumerator PrintRoutine()
@@ -118,7 +161,50 @@ public class MagicPrinterController : MonoBehaviour
         }
 
         PlayConfettiOnce();
+        OpenExitDoor();
         SetFeedback(doneMessage);
+    }
+
+    private void OpenExitDoor()
+    {
+        if (exitDoorOpened)
+        {
+            return;
+        }
+
+        ResolveExitDoor();
+
+        if (exitDoor == null)
+        {
+            Debug.LogWarning($"MagicPrinter could not find exit door '{exitDoorName}'.", this);
+            return;
+        }
+
+        exitDoorOpened = true;
+        StartCoroutine(OpenExitDoorRoutine());
+    }
+
+    private IEnumerator OpenExitDoorRoutine()
+    {
+        Quaternion closedRotation = exitDoor.localRotation;
+        Quaternion openRotation = closedRotation * Quaternion.Euler(exitDoorOpenEulerOffset);
+
+        if (exitDoorOpenDuration <= 0f)
+        {
+            exitDoor.localRotation = openRotation;
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < exitDoorOpenDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / exitDoorOpenDuration);
+            exitDoor.localRotation = Quaternion.Slerp(closedRotation, openRotation, Mathf.SmoothStep(0f, 1f, t));
+            yield return null;
+        }
+
+        exitDoor.localRotation = openRotation;
     }
 
     private void PlayConfettiOnce()
@@ -236,6 +322,8 @@ public class MagicPrinterController : MonoBehaviour
             }
         }
 
+        ResolveNameInputField();
+        ResolveExitDoor();
         ResolveConfettiEffect();
     }
 
@@ -258,6 +346,87 @@ public class MagicPrinterController : MonoBehaviour
         {
             confettiEffect = FindParticleSystemByName(confettiEffectName);
         }
+    }
+
+    private void ResolveNameInputField()
+    {
+        if (nameInputField != null)
+        {
+            return;
+        }
+
+        TMP_InputField[] inputFields = FindObjectsByType<TMP_InputField>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (TMP_InputField inputField in inputFields)
+        {
+            if (inputField != null && IsUnderNamedParent(inputField.transform, keyboardRootName))
+            {
+                nameInputField = inputField;
+                return;
+            }
+        }
+
+        if (inputFields.Length > 0)
+        {
+            nameInputField = inputFields[0];
+        }
+    }
+
+    private void ResolveExitDoor()
+    {
+        if (exitDoor != null)
+        {
+            return;
+        }
+
+        Transform exitDoorRoot = FindSceneTransformByName(exitDoorName);
+        if (exitDoorRoot != null)
+        {
+            Transform doorWing = FindChildByName(exitDoorRoot, exitDoorWingName);
+            exitDoor = doorWing != null ? doorWing : exitDoorRoot;
+            return;
+        }
+
+        exitDoor = FindSceneTransformByName("Door_HouseA_Blue");
+    }
+
+    private static bool IsUnderNamedParent(Transform candidate, string parentName)
+    {
+        if (candidate == null || string.IsNullOrEmpty(parentName))
+        {
+            return false;
+        }
+
+        Transform current = candidate;
+        while (current != null)
+        {
+            if (current.name == parentName)
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    private static Transform FindSceneTransformByName(string objectName)
+    {
+        if (string.IsNullOrEmpty(objectName))
+        {
+            return null;
+        }
+
+        Transform[] transforms = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (Transform sceneTransform in transforms)
+        {
+            if (sceneTransform.name == objectName)
+            {
+                return sceneTransform;
+            }
+        }
+
+        return null;
     }
 
     private static ParticleSystem FindParticleSystemByName(string effectName)
