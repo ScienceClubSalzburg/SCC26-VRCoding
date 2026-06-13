@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MagicPrinterController : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private TMP_Text feedbackText;
     [SerializeField] private TMP_InputField nameInputField;
     [SerializeField] private GameObject printedCardVisual;
+    [SerializeField] private Sprite printedCardSprite;
     [SerializeField] private ParticleSystem confettiEffect;
 
     [Header("Detection")]
@@ -47,6 +49,7 @@ public class MagicPrinterController : MonoBehaviour
     private bool isPrinting;
     private bool printed;
     private bool exitDoorOpened;
+    private GameObject detectedCardVisual;
 
     private void Awake()
     {
@@ -59,7 +62,7 @@ public class MagicPrinterController : MonoBehaviour
 
         if (printedCardVisual != null)
         {
-            printedCardVisual.SetActive(false);
+            ApplyPrintedCardSprite();
         }
 
         if (confettiEffect != null)
@@ -162,7 +165,11 @@ public class MagicPrinterController : MonoBehaviour
 
         if (printedCardVisual != null)
         {
-            printedCardVisual.SetActive(true);
+            ApplyPrintedCardSprite(printedCardVisual);
+        }
+        else
+        {
+            ApplyPrintedCardSprite(detectedCardVisual);
         }
 
         if (playConfettiOnPrint)
@@ -279,11 +286,34 @@ public class MagicPrinterController : MonoBehaviour
 
             if (string.IsNullOrEmpty(cardNameContains) || hit.name.Contains(cardNameContains) || hit.transform.root.name.Contains(cardNameContains))
             {
+                detectedCardVisual = FindDetectedCardVisual(hit.transform);
                 return true;
             }
         }
 
+        detectedCardVisual = null;
         return false;
+    }
+
+    private GameObject FindDetectedCardVisual(Transform hitTransform)
+    {
+        if (hitTransform == null)
+        {
+            return null;
+        }
+
+        Transform current = hitTransform;
+        while (current != null)
+        {
+            if (!string.IsNullOrEmpty(cardNameContains) && current.name.Contains(cardNameContains))
+            {
+                return current.gameObject;
+            }
+
+            current = current.parent;
+        }
+
+        return hitTransform.root != null ? hitTransform.root.gameObject : hitTransform.gameObject;
     }
 
     private void UpdateFeedback()
@@ -337,6 +367,7 @@ public class MagicPrinterController : MonoBehaviour
         {
             ResolveConfettiEffect();
         }
+
     }
 
     private static Transform FindChildByName(Transform root, string childName)
@@ -423,6 +454,34 @@ public class MagicPrinterController : MonoBehaviour
             confettiRenderer.renderMode = ParticleSystemRenderMode.Billboard;
             confettiRenderer.maxParticleSize = 0.12f;
             confettiRenderer.sortingOrder = 5;
+        }
+    }
+
+    private void ApplyPrintedCardSprite()
+    {
+        ApplyPrintedCardSprite(printedCardVisual);
+    }
+
+    private void ApplyPrintedCardSprite(GameObject target)
+    {
+        if (printedCardSprite == null || target == null)
+        {
+            return;
+        }
+
+        if (target.TryGetComponent(out SpriteRenderer spriteRenderer))
+        {
+            spriteRenderer.sprite = printedCardSprite;
+        }
+
+        foreach (SpriteRenderer childSpriteRenderer in target.GetComponentsInChildren<SpriteRenderer>(true))
+        {
+            childSpriteRenderer.sprite = printedCardSprite;
+        }
+
+        foreach (Image image in target.GetComponentsInChildren<Image>(true))
+        {
+            image.sprite = printedCardSprite;
         }
     }
 
