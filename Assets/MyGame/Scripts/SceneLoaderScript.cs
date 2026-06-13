@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public class SceneLoaderScript : MonoBehaviour
 {
-    [SerializeField] private string[] additiveSceneNames = { "BirthdayParty" };
+    [SerializeField] private string[] additiveSceneNames = { "BirthdayParty", "EntkommeDemTest" };
     [SerializeField] private bool loadOnStart = true;
     [SerializeField] private bool setFirstLoadedSceneActive;
 
