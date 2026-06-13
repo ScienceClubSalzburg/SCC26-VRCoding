@@ -45,6 +45,22 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private Vector3 exitDoorOpenEulerOffset = new Vector3(0f, -90f, 0f);
     [SerializeField] private float exitDoorOpenDuration = 1f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource printerAudioSource;
+    [SerializeField] private AudioSource backgroundMusicSource;
+    // Credit: printerPrintClip - recommended source Kenney "Impact Sounds", CC0, https://kenney.nl/assets/impact-sounds
+    [SerializeField] private AudioClip printerPrintClip;
+    // Credit: confettiClip - recommended source Kenney "Impact Sounds", CC0, https://kenney.nl/assets/impact-sounds
+    [SerializeField] private AudioClip confettiClip;
+    // Credit: doorOpenClip - recommended source Kenney "Impact Sounds", CC0, https://kenney.nl/assets/impact-sounds
+    [SerializeField] private AudioClip doorOpenClip;
+    // Credit: backgroundMusicClip - recommended source Kenney "Music Jingles", CC0, https://kenney.nl/assets/music-jingles
+    [SerializeField] private AudioClip backgroundMusicClip;
+    [SerializeField, Range(0f, 1f)] private float printerPrintVolume = 0.8f;
+    [SerializeField, Range(0f, 1f)] private float confettiVolume = 0.9f;
+    [SerializeField, Range(0f, 1f)] private float doorOpenVolume = 0.7f;
+    [SerializeField, Range(0f, 1f)] private float backgroundMusicVolume = 0.18f;
+
     private Vector3 headStartLocalPosition;
     private bool cardDetected;
     private bool isPrinting;
@@ -55,6 +71,7 @@ public class MagicPrinterController : MonoBehaviour
     private void Awake()
     {
         AutoWireReferences();
+        ResolveAudioSources();
 
         if (printerHead != null)
         {
@@ -74,6 +91,8 @@ public class MagicPrinterController : MonoBehaviour
 
     private void Start()
     {
+        PlayBackgroundMusic();
+
         if (playConfettiOnPrint)
         {
             ResolveConfettiEffect();
@@ -174,6 +193,7 @@ public class MagicPrinterController : MonoBehaviour
     {
         isPrinting = true;
         SetFeedback(printingMessage);
+        PlayOneShot(printerPrintClip, printerPrintVolume);
 
         Vector3 downPosition = headStartLocalPosition + headDownOffset;
         yield return MoveHead(headStartLocalPosition, downPosition, headMoveDuration);
@@ -217,6 +237,7 @@ public class MagicPrinterController : MonoBehaviour
         }
 
         exitDoorOpened = true;
+        PlayOneShot(doorOpenClip, doorOpenVolume);
         StartCoroutine(OpenExitDoorRoutine());
     }
 
@@ -257,6 +278,7 @@ public class MagicPrinterController : MonoBehaviour
         confettiEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         confettiEffect.Clear(true);
         confettiEffect.Play(true);
+        PlayOneShot(confettiClip, confettiVolume);
     }
 
     private IEnumerator MoveHead(Vector3 from, Vector3 to, float duration)
@@ -383,6 +405,7 @@ public class MagicPrinterController : MonoBehaviour
 
         ResolveNameInputField();
         ResolveExitDoor();
+        ResolveAudioSources();
         if (playConfettiOnPrint)
         {
             ResolveConfettiEffect();
@@ -411,6 +434,59 @@ public class MagicPrinterController : MonoBehaviour
         }
 
         ConfigureConfettiEffect();
+    }
+
+    private void ResolveAudioSources()
+    {
+        if (printerAudioSource == null)
+        {
+            printerAudioSource = GetComponent<AudioSource>();
+            if (printerAudioSource == null)
+            {
+                printerAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
+
+        printerAudioSource.playOnAwake = false;
+        printerAudioSource.spatialBlend = 1f;
+
+        if (backgroundMusicSource == null && backgroundMusicClip != null)
+        {
+            backgroundMusicSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        if (backgroundMusicSource != null)
+        {
+            backgroundMusicSource.playOnAwake = false;
+        }
+    }
+
+    private void PlayBackgroundMusic()
+    {
+        if (backgroundMusicClip == null || backgroundMusicSource == null)
+        {
+            return;
+        }
+
+        backgroundMusicSource.clip = backgroundMusicClip;
+        backgroundMusicSource.loop = true;
+        backgroundMusicSource.volume = backgroundMusicVolume;
+        backgroundMusicSource.spatialBlend = 0f;
+
+        if (!backgroundMusicSource.isPlaying)
+        {
+            backgroundMusicSource.Play();
+        }
+    }
+
+    private void PlayOneShot(AudioClip clip, float volume)
+    {
+        if (clip == null || printerAudioSource == null)
+        {
+            return;
+        }
+
+        printerAudioSource.PlayOneShot(clip, volume);
     }
 
     private void ConfigureConfettiEffect()

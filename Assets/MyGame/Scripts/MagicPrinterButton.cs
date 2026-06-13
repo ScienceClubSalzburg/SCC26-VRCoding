@@ -12,6 +12,12 @@ public class MagicPrinterButton : MonoBehaviour
     [SerializeField] private float pressInDuration = 0.08f;
     [SerializeField] private float pressOutDuration = 0.14f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource buttonAudioSource;
+    // Credit: buttonPressClip - recommended source Kenney "Interface Sounds", CC0, https://kenney.nl/assets/interface-sounds
+    [SerializeField] private AudioClip buttonPressClip;
+    [SerializeField, Range(0f, 1f)] private float buttonPressVolume = 0.75f;
+
     private Vector3 startLocalPosition;
     private Coroutine animationRoutine;
     private XRSimpleInteractable interactable;
@@ -29,6 +35,7 @@ public class MagicPrinterButton : MonoBehaviour
         }
 
         startLocalPosition = buttonVisual.localPosition;
+        ResolveAudioSource();
 
         interactable = GetComponent<XRSimpleInteractable>();
         if (interactable == null)
@@ -76,6 +83,7 @@ public class MagicPrinterButton : MonoBehaviour
 
     public void Press()
     {
+        PlayButtonSound();
         PlayPressAnimation();
 
         if (printer != null)
@@ -103,6 +111,29 @@ public class MagicPrinterButton : MonoBehaviour
         }
 
         animationRoutine = StartCoroutine(AnimatePress());
+    }
+
+    private void ResolveAudioSource()
+    {
+        if (buttonAudioSource == null)
+        {
+            buttonAudioSource = GetComponent<AudioSource>();
+            if (buttonAudioSource == null)
+            {
+                buttonAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
+
+        buttonAudioSource.playOnAwake = false;
+        buttonAudioSource.spatialBlend = 1f;
+    }
+
+    private void PlayButtonSound()
+    {
+        if (buttonAudioSource != null && buttonPressClip != null)
+        {
+            buttonAudioSource.PlayOneShot(buttonPressClip, buttonPressVolume);
+        }
     }
 
     private IEnumerator AnimatePress()
