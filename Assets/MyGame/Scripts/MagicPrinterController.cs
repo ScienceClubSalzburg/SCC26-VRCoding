@@ -24,11 +24,12 @@ public class MagicPrinterController : MonoBehaviour
     [SerializeField] private Vector3 headDownOffset = new Vector3(0f, -0.22f, 0f);
     [SerializeField] private float headMoveDuration = 0.6f;
     [SerializeField] private float printHoldDuration = 1.2f;
-    [SerializeField] private string waitingMessage = "Finde die Karte!";
-    [SerializeField] private string readyMessage = "Drücke den grünen Knopf um zu starten.";
-    [SerializeField] private string printingMessage = "Karte wird gedruckt...";
-    [SerializeField] private string doneMessage = "Karte ist gedruckt!";
-    [SerializeField] private string wrongNameMessage = "Falscher Name!";
+    [SerializeField] private string waitingMessage = "Lege die Geburtstagskarte ein.";
+    [SerializeField] private string readyMessage = "Karte erkannt.\nJetzt fehlt noch der Name des Geburtstagskindes.";
+    [SerializeField] private string missingNameMessage = "Gib den entschlüsselten Namen ein.";
+    [SerializeField] private string wrongNameMessage = "Das ist noch nicht der richtige Name.\nPrüft die Emoji-Cäsar-Scheibe noch einmal.";
+    [SerializeField] private string printingMessage = "Name erkannt.\nDie Geburtstagskarte wird gedruckt.";
+    [SerializeField] private string doneMessage = "Die Geburtstagskarte ist fertig!\nDie Party kann beginnen.";
     [SerializeField] private bool playConfettiOnPrint = false;
     [SerializeField] private string confettiEffectName = "ConfettiParticleEffect";
 
@@ -116,6 +117,12 @@ public class MagicPrinterController : MonoBehaviour
             return;
         }
 
+        if (requireCorrectName && IsEnteredNameMissing())
+        {
+            SetFeedback(missingNameMessage);
+            return;
+        }
+
         if (requireCorrectName && !IsEnteredNameCorrect())
         {
             SetFeedback(wrongNameMessage);
@@ -138,6 +145,19 @@ public class MagicPrinterController : MonoBehaviour
         string enteredName = NormalizeName(nameInputField.text);
         string expectedName = NormalizeName(requiredName);
         return string.Equals(enteredName, expectedName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsEnteredNameMissing()
+    {
+        ResolveNameInputField();
+
+        if (nameInputField == null)
+        {
+            Debug.LogWarning("MagicPrinter could not find a TMP_InputField for the birthday name check.", this);
+            return true;
+        }
+
+        return string.IsNullOrEmpty(NormalizeName(nameInputField.text));
     }
 
     private static string NormalizeName(string value)
