@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -21,15 +22,27 @@ public class NumberBaseTerminalController : MonoBehaviour
     [SerializeField] private TMP_Text basisDisplayText;
     [SerializeField] private TMP_Text numberDisplayText;
 
+    [Header("Input Panels")]
+    [SerializeField] private GameObject decimalNumberPad;
+    [SerializeField] private GameObject binaryDigitPanel;
+
+    [Header("Exit Door")]
+    [SerializeField] private Transform exitDoor;
+    [SerializeField] private string exitDoorName = "ExitDoor";
+    [SerializeField] private string exitDoorWingName = "doorWing";
+    [SerializeField] private Vector3 exitDoorOpenEulerOffset = new Vector3(0f, -90f, 0f);
+    [SerializeField] private float exitDoorOpenDuration = 1f;
+
     [Header("Target")]
     [SerializeField] private int expectedBasis = 10;
     [SerializeField] private int expectedNumber = 37;
-    [SerializeField] private int targetBasis = 2;
 
     [Header("Messages")]
     [SerializeField] private string startMessage = "Gib die Basis und die Zahl ein.";
     [SerializeField] private string wrongBasisMessage = "Falsche Basis.\nDieses Terminal erwartet die Basis 10.";
     [SerializeField] private string wrongNumberMessage = "Falsche Zahl.\nPr\u00fcfe die eingegebene Zahl noch einmal.";
+    [SerializeField] private string wrongBinaryMessage = "Der Bin\u00e4rcode ist nicht korrekt.\nPr\u00fcfe die Reihenfolge der Reste.";
+    [SerializeField] private string binarySuccessMessage = "Zugriff gew\u00e4hrt\n37\u2081\u2080 = 100101\u2082\nGleicher Wert - andere Darstellung\nTEST bestanden";
     [SerializeField] private string missingInputMessage = "Gib zuerst Basis und Zahl ein.";
 
     [Header("Events")]
@@ -40,6 +53,7 @@ public class NumberBaseTerminalController : MonoBehaviour
     private readonly System.Text.StringBuilder numberInput = new System.Text.StringBuilder();
     private InputTarget activeInputTarget = InputTarget.Basis;
     private TerminalPhase phase = TerminalPhase.PhaseOne;
+    private bool exitDoorOpened;
 
     public bool IsPhaseTwo => phase == TerminalPhase.PhaseTwo;
     public string CurrentBasisInput => basisInput.ToString();
@@ -49,6 +63,8 @@ public class NumberBaseTerminalController : MonoBehaviour
     private void Awake()
     {
         ResolveDisplayReferences();
+        ResolveInputPanels();
+        UpdateInputPanels();
         RefreshDisplay(startMessage);
     }
 
@@ -73,7 +89,7 @@ public class NumberBaseTerminalController : MonoBehaviour
 
     public void EnterBasisValue(int basis)
     {
-        if (phase != TerminalPhase.PhaseOne || basis < 0)
+        if (basis < 0)
         {
             return;
         }
@@ -138,6 +154,12 @@ public class NumberBaseTerminalController : MonoBehaviour
 
     public void SubmitPhaseOne()
     {
+        if (phase == TerminalPhase.PhaseTwo)
+        {
+            SubmitPhaseTwo();
+            return;
+        }
+
         if (phase != TerminalPhase.PhaseOne)
         {
             return;
@@ -161,14 +183,71 @@ public class NumberBaseTerminalController : MonoBehaviour
             return;
         }
 
+        string successMessage = BuildSuccessMessage(number);
         phase = TerminalPhase.PhaseTwo;
-        RefreshDisplay(BuildSuccessMessage(number));
+        numberInput.Clear();
+        activeInputTarget = InputTarget.Number;
+        RefreshDisplay(successMessage);
         phaseTwoStarted?.Invoke();
+    }
+
+    private void SubmitPhaseTwo()
+    {
+        string expectedBinary = System.Convert.ToString(expectedNumber, 2);
+        if (numberInput.ToString() != expectedBinary)
+        {
+            RefreshDisplay(wrongBinaryMessage);
+            return;
+        }
+
+        RefreshDisplay(binarySuccessMessage);
+        OpenExitDoor();
+    }
+
+    private void OpenExitDoor()
+    {
+        if (exitDoorOpened)
+        {
+            return;
+        }
+
+        ResolveExitDoor();
+        if (exitDoor == null)
+        {
+            Debug.LogWarning($"NumberBaseTerminal could not find exit door '{exitDoorName}'.", this);
+            return;
+        }
+
+        exitDoorOpened = true;
+        StartCoroutine(OpenExitDoorRoutine());
+    }
+
+    private IEnumerator OpenExitDoorRoutine()
+    {
+        Quaternion closedRotation = exitDoor.localRotation;
+        Quaternion openRotation = closedRotation * Quaternion.Euler(exitDoorOpenEulerOffset);
+
+        if (exitDoorOpenDuration <= 0f)
+        {
+            exitDoor.localRotation = openRotation;
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < exitDoorOpenDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / exitDoorOpenDuration);
+            exitDoor.localRotation = Quaternion.Slerp(closedRotation, openRotation, Mathf.SmoothStep(0f, 1f, t));
+            yield return null;
+        }
+
+        exitDoor.localRotation = openRotation;
     }
 
     private void AppendDigit(int digit)
     {
-        if (phase != TerminalPhase.PhaseOne || digit < 0 || digit > 9)
+        if (digit < 0 || digit > 9)
         {
             return;
         }
@@ -186,7 +265,7 @@ public class NumberBaseTerminalController : MonoBehaviour
 
     private string BuildSuccessMessage(int number)
     {
-        return $"Eingabe erkannt\n{number} im Dezimalsystem\nIch ben\u00f6tige dieselbe Zahl im Bin\u00e4rsystem.\nZielsystem: Basis {targetBasis}";
+        return $"Eingabe erkannt\n{number} im Dezimalsystem.\nJetzt dieselbe Zahl im Bin\u00e4rsystem.";
     }
 
     private System.Text.StringBuilder GetActiveInput()
@@ -225,7 +304,27 @@ public class NumberBaseTerminalController : MonoBehaviour
 
     private void NotifyBasisChanged()
     {
-        basisChanged?.Invoke(TryGetCurrentBasis(out int basis) ? basis : -1);
+        int basis = TryGetCurrentBasis(out int currentBasis) ? currentBasis : -1;
+        UpdateInputPanels(basis);
+        basisChanged?.Invoke(basis);
+    }
+
+    private void UpdateInputPanels()
+    {
+        UpdateInputPanels(TryGetCurrentBasis(out int basis) ? basis : -1);
+    }
+
+    private void UpdateInputPanels(int selectedBasis)
+    {
+        if (decimalNumberPad != null)
+        {
+            decimalNumberPad.SetActive(selectedBasis == 10);
+        }
+
+        if (binaryDigitPanel != null)
+        {
+            binaryDigitPanel.SetActive(selectedBasis == 2);
+        }
     }
 
     private void ResolveDisplayReferences()
@@ -244,6 +343,72 @@ public class NumberBaseTerminalController : MonoBehaviour
                 return;
             }
         }
+    }
+
+    private void ResolveInputPanels()
+    {
+        if (decimalNumberPad == null)
+        {
+            decimalNumberPad = FindChildGameObject("DigitPanel-Decimal");
+            if (decimalNumberPad == null)
+            {
+                decimalNumberPad = FindChildGameObject("NumberPad-Decimal");
+            }
+        }
+
+        if (binaryDigitPanel == null)
+        {
+            binaryDigitPanel = FindChildGameObject("DigitPanel-Binary");
+        }
+    }
+
+    private void ResolveExitDoor()
+    {
+        if (exitDoor != null)
+        {
+            return;
+        }
+
+        GameObject exitDoorRoot = GameObject.Find(exitDoorName);
+        if (exitDoorRoot == null)
+        {
+            return;
+        }
+
+        Transform doorWing = FindChildTransform(exitDoorRoot.transform, exitDoorWingName);
+        exitDoor = doorWing != null ? doorWing : exitDoorRoot.transform;
+    }
+
+    private GameObject FindChildGameObject(string childName)
+    {
+        Transform[] children = GetComponentsInChildren<Transform>(true);
+        foreach (Transform child in children)
+        {
+            if (child.name == childName)
+            {
+                return child.gameObject;
+            }
+        }
+
+        return null;
+    }
+
+    private static Transform FindChildTransform(Transform root, string childName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name == childName)
+            {
+                return child;
+            }
+        }
+
+        return null;
     }
 
 }
