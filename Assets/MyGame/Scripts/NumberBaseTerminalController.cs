@@ -31,7 +31,12 @@ public class NumberBaseTerminalController : MonoBehaviour
     [SerializeField] private string exitDoorName = "ExitDoor";
     [SerializeField] private string exitDoorWingName = "doorWing";
     [SerializeField] private Vector3 exitDoorOpenEulerOffset = new Vector3(0f, -90f, 0f);
+    [SerializeField] private bool useAbsoluteExitDoorOpenEuler;
+    [SerializeField] private Vector3 exitDoorOpenPositionOffset = new Vector3(1.2f, 0f, 0f);
     [SerializeField] private float exitDoorOpenDuration = 1f;
+    [SerializeField] private bool useHingeOpenAnimation = true;
+    [SerializeField] private bool disableDoorCollidersAfterOpen = true;
+    [SerializeField] private bool hideDoorWingAfterOpen = false;
 
     [Header("Target")]
     [SerializeField] private int expectedBasis = 10;
@@ -54,6 +59,7 @@ public class NumberBaseTerminalController : MonoBehaviour
     private InputTarget activeInputTarget = InputTarget.Basis;
     private TerminalPhase phase = TerminalPhase.PhaseOne;
     private bool exitDoorOpened;
+    private Transform exitDoorAnimationTarget;
 
     public bool IsPhaseTwo => phase == TerminalPhase.PhaseTwo;
     public string CurrentBasisInput => basisInput.ToString();
@@ -218,18 +224,40 @@ public class NumberBaseTerminalController : MonoBehaviour
             return;
         }
 
+        MakeDoorDynamic(exitDoor);
         exitDoorOpened = true;
+        Debug.Log($"NumberBaseTerminal opens exit door '{exitDoor.name}'.", this);
         StartCoroutine(OpenExitDoorRoutine());
+    }
+
+    private static void MakeDoorDynamic(Transform doorTransform)
+    {
+        if (doorTransform == null)
+        {
+            return;
+        }
+
+        foreach (Transform child in doorTransform.GetComponentsInChildren<Transform>(true))
+        {
+            child.gameObject.isStatic = false;
+        }
     }
 
     private IEnumerator OpenExitDoorRoutine()
     {
-        Quaternion closedRotation = exitDoor.localRotation;
-        Quaternion openRotation = closedRotation * Quaternion.Euler(exitDoorOpenEulerOffset);
+        Transform animatedDoor = GetExitDoorAnimationTarget();
+        Vector3 closedPosition = animatedDoor.localPosition;
+        Vector3 openPosition = closedPosition + exitDoorOpenPositionOffset;
+        Quaternion closedRotation = animatedDoor.localRotation;
+        Quaternion openRotation = useAbsoluteExitDoorOpenEuler
+            ? Quaternion.Euler(exitDoorOpenEulerOffset)
+            : closedRotation * Quaternion.Euler(exitDoorOpenEulerOffset);
 
         if (exitDoorOpenDuration <= 0f)
         {
-            exitDoor.localRotation = openRotation;
+            animatedDoor.localPosition = openPosition;
+            animatedDoor.localRotation = openRotation;
+            FinishDoorOpen();
             yield break;
         }
 
@@ -238,11 +266,87 @@ public class NumberBaseTerminalController : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / exitDoorOpenDuration);
-            exitDoor.localRotation = Quaternion.Slerp(closedRotation, openRotation, Mathf.SmoothStep(0f, 1f, t));
+            float easedT = Mathf.SmoothStep(0f, 1f, t);
+            animatedDoor.localPosition = Vector3.Lerp(closedPosition, openPosition, easedT);
+            animatedDoor.localRotation = Quaternion.Slerp(closedRotation, openRotation, easedT);
             yield return null;
         }
 
-        exitDoor.localRotation = openRotation;
+        animatedDoor.localPosition = openPosition;
+        animatedDoor.localRotation = openRotation;
+        FinishDoorOpen();
+    }
+
+    private Transform GetExitDoorAnimationTarget()
+    {
+        if (!useHingeOpenAnimation || exitDoor == null)
+        {
+            return exitDoor;
+        }
+
+        if (exitDoorAnimationTarget != null)
+        {
+            return exitDoorAnimationTarget;
+        }
+
+        Transform parent = exitDoor.parent;
+        GameObject hingeObject = new GameObject($"{exitDoor.name}_RuntimeHinge");
+        Transform hinge = hingeObject.transform;
+        hinge.SetParent(parent, false);
+        hinge.SetPositionAndRotation(GetDoorHingePosition(), exitDoor.rotation);
+        exitDoor.SetParent(hinge, true);
+        exitDoorAnimationTarget = hinge;
+        return exitDoorAnimationTarget;
+    }
+
+    private Vector3 GetDoorHingePosition()
+    {
+        MeshFilter meshFilter = exitDoor.GetComponent<MeshFilter>();
+        if (meshFilter != null && meshFilter.sharedMesh != null)
+        {
+            Bounds localBounds = meshFilter.sharedMesh.bounds;
+            Vector3 hingeLocalPosition = new Vector3(localBounds.min.x, localBounds.center.y, localBounds.center.z);
+            return exitDoor.TransformPoint(hingeLocalPosition);
+        }
+
+        Renderer doorRenderer = exitDoor.GetComponentInChildren<Renderer>();
+        if (doorRenderer != null)
+        {
+            Bounds bounds = doorRenderer.bounds;
+            return new Vector3(bounds.min.x, bounds.center.y, bounds.center.z);
+        }
+
+        return exitDoor.position;
+    }
+
+    private void FinishDoorOpen()
+    {
+        DisableDoorCollidersIfNeeded();
+        HideDoorWingIfNeeded();
+    }
+
+    private void DisableDoorCollidersIfNeeded()
+    {
+        if (!disableDoorCollidersAfterOpen || exitDoor == null)
+        {
+            return;
+        }
+
+        Collider[] doorColliders = exitDoor.GetComponentsInChildren<Collider>(true);
+        foreach (Collider doorCollider in doorColliders)
+        {
+            doorCollider.enabled = false;
+        }
+    }
+
+    private void HideDoorWingIfNeeded()
+    {
+        if (!hideDoorWingAfterOpen || exitDoor == null)
+        {
+            return;
+        }
+
+        exitDoor.gameObject.SetActive(false);
     }
 
     private void AppendDigit(int digit)
@@ -366,6 +470,12 @@ public class NumberBaseTerminalController : MonoBehaviour
     {
         if (exitDoor != null)
         {
+            Transform linkedDoorWing = FindChildTransform(exitDoor, exitDoorWingName);
+            if (linkedDoorWing != null)
+            {
+                exitDoor = linkedDoorWing;
+            }
+
             return;
         }
 
