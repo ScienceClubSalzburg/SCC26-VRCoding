@@ -29,6 +29,7 @@ public class DigitButton : MonoBehaviour
 
     [Header("Terminal Input")]
     [SerializeField] private NumberBaseTerminalController terminal;
+    [SerializeField] private DecimalDivisionCalculator calculator;
     [SerializeField] private TerminalInputMode terminalInputMode = TerminalInputMode.AutoFromText;
 
     [Header("Basis Selection")]
@@ -104,6 +105,11 @@ public class DigitButton : MonoBehaviour
             terminal = GetComponentInParent<NumberBaseTerminalController>();
         }
 
+        if (calculator == null)
+        {
+            calculator = GetComponentInParent<DecimalDivisionCalculator>();
+        }
+
         buttonRenderers = GetComponentsInChildren<Renderer>(true);
         propertyBlock = new MaterialPropertyBlock();
 
@@ -126,7 +132,18 @@ public class DigitButton : MonoBehaviour
 
     private void SendToTerminal(string label)
     {
-        if (terminal == null || terminalInputMode == TerminalInputMode.Disabled)
+        if (terminalInputMode == TerminalInputMode.Disabled)
+        {
+            return;
+        }
+
+        if (terminal == null && calculator != null)
+        {
+            SendToCalculator(label);
+            return;
+        }
+
+        if (terminal == null)
         {
             return;
         }
@@ -148,6 +165,27 @@ public class DigitButton : MonoBehaviour
             case TerminalInputMode.AutoFromText:
                 SendAuto(label);
                 break;
+        }
+    }
+
+    private void SendToCalculator(string label)
+    {
+        if (string.Equals(label, "OK", StringComparison.OrdinalIgnoreCase))
+        {
+            calculator.Submit();
+            return;
+        }
+
+        if (string.Equals(label, "DEL", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(label, "DELETE", StringComparison.OrdinalIgnoreCase))
+        {
+            calculator.DeleteLastInput();
+            return;
+        }
+
+        if (int.TryParse(label, out int value) && value >= 0 && value <= 9)
+        {
+            calculator.PressNumberDigit(value);
         }
     }
 
