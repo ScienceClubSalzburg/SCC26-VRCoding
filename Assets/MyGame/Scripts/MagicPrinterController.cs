@@ -263,7 +263,7 @@ public class MagicPrinterController : MonoBehaviour
 
         exitDoor.localRotation = openRotation;
     }
-
+    [ContextMenu("Triggereffect")]
     private void PlayConfettiOnce()
     {
         ResolveConfettiEffect();
@@ -274,9 +274,6 @@ public class MagicPrinterController : MonoBehaviour
             return;
         }
 
-        confettiEffect.gameObject.SetActive(true);
-        confettiEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        confettiEffect.Clear(true);
         confettiEffect.Play(true);
         PlayOneShot(confettiClip, confettiVolume);
     }
@@ -429,11 +426,7 @@ public class MagicPrinterController : MonoBehaviour
     private void ResolveConfettiEffect()
     {
         if (confettiEffect == null)
-        {
             confettiEffect = FindParticleSystemByName(confettiEffectName);
-        }
-
-        ConfigureConfettiEffect();
     }
 
     private void ResolveAudioSources()
@@ -489,69 +482,6 @@ public class MagicPrinterController : MonoBehaviour
         printerAudioSource.PlayOneShot(clip, volume);
     }
 
-    private void ConfigureConfettiEffect()
-    {
-        if (confettiEffect == null)
-        {
-            return;
-        }
-
-        ParticleSystem.MainModule main = confettiEffect.main;
-        main.duration = 1.4f;
-        main.loop = false;
-        main.playOnAwake = false;
-        main.startLifetime = new ParticleSystem.MinMaxCurve(1.2f, 2.2f);
-        main.startSpeed = new ParticleSystem.MinMaxCurve(1.6f, 3.2f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.035f, 0.075f);
-        main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
-        main.gravityModifier = 0.45f;
-        main.maxParticles = 90;
-        main.simulationSpace = ParticleSystemSimulationSpace.World;
-
-        ParticleSystem.EmissionModule emission = confettiEffect.emission;
-        emission.rateOverTime = 0f;
-        emission.SetBursts(new[]
-        {
-            new ParticleSystem.Burst(0f, (short)55, (short)75),
-        });
-
-        ParticleSystem.ShapeModule shape = confettiEffect.shape;
-        shape.enabled = true;
-        shape.shapeType = ParticleSystemShapeType.Cone;
-        shape.angle = 28f;
-        shape.radius = 0.18f;
-        shape.length = 0.08f;
-        shape.randomDirectionAmount = 0.25f;
-
-        ParticleSystem.ColorOverLifetimeModule colorOverLifetime = confettiEffect.colorOverLifetime;
-        colorOverLifetime.enabled = true;
-        Gradient fade = new Gradient();
-        fade.SetKeys(
-            new[]
-            {
-                new GradientColorKey(Color.white, 0f),
-                new GradientColorKey(Color.white, 1f),
-            },
-            new[]
-            {
-                new GradientAlphaKey(1f, 0f),
-                new GradientAlphaKey(1f, 0.72f),
-                new GradientAlphaKey(0f, 1f),
-            });
-        colorOverLifetime.color = fade;
-
-        ParticleSystem.RotationOverLifetimeModule rotationOverLifetime = confettiEffect.rotationOverLifetime;
-        rotationOverLifetime.enabled = true;
-        rotationOverLifetime.z = new ParticleSystem.MinMaxCurve(-4f, 4f);
-
-        ParticleSystemRenderer confettiRenderer = confettiEffect.GetComponent<ParticleSystemRenderer>();
-        if (confettiRenderer != null)
-        {
-            confettiRenderer.renderMode = ParticleSystemRenderMode.Billboard;
-            confettiRenderer.maxParticleSize = 0.12f;
-            confettiRenderer.sortingOrder = 5;
-        }
-    }
 
     private void ApplyPrintedCardSprite()
     {
